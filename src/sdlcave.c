@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL.h>
-#include <SDL_gfxPrimitives.h>
+#include <SDL/SDL.h>
+#include "SDL_gfxPrimitives.h"
 
-#ifndef WIN
-#include <pwd.h>
-#endif
 
 #define ACCEL 0.4
 #define NL 100
@@ -18,11 +15,10 @@ double obtenir_meilleur_score()
 {
 #ifndef WIN
 	FILE *sc;
-	struct passwd *p;
 	double score;
 	char l_score[50];
-	p = getpwuid(getuid());
-	sprintf(l_score, "%s/.sdlcave_score", p->pw_dir);
+
+        sprintf(l_score, "~/.sdlcave_score");
 	sc = fopen(l_score, "r");
 	if(sc == NULL)
 	{
@@ -44,11 +40,10 @@ void maj_meilleur_score(float score)
 {
 #ifndef WIN
 	FILE *sc;
-	struct passwd *p;
 	double a_score;
 	char l_score[50];
-	p = getpwuid(getuid());
-	sprintf(l_score, "%s/.sdlcave_score", p->pw_dir);
+    
+	sprintf(l_score, "~/.sdlcave_score");
 
 	a_score = obtenir_meilleur_score();
 
@@ -66,6 +61,8 @@ void maj_meilleur_score(float score)
 #else
 #endif
 }
+
+#undef main
 
 int main(int argc, char **argv)
 {
@@ -94,13 +91,19 @@ int main(int argc, char **argv)
 	SDL_Surface *ecran;
 	SDL_Event ev;
 
-	srand(time(NULL));
-	police_f = fopen("/opt/sdlcave/share/sdlcave/10x20.fnt", "r");
+    srand(time(NULL));
+#ifdef WIN32    
+        police_f = fopen("10x20.fnt", "rb");    
+#else
+        police_f = fopen("/opt/sdlcave/10x20.fnt", "rb");    
+#endif
 	if(police_f != NULL)
 	{
 		police = malloc(10240);
 		fread(police, 1, 10240, police_f);
 		gfxPrimitivesSetFont(police, 10, 20);
+                printf("LOADED font: %x\n", police);
+
 	} else printf("Error opening font file. Will be using the default 8x8 font.\n");
 
 
@@ -120,9 +123,17 @@ int main(int argc, char **argv)
 	score = 0;
 	a_score = obtenir_meilleur_score();
 
+        printf("INIT...\n"); //DEBUG
 	SDL_Init(SDL_INIT_VIDEO);
+    
+        printf("SET MODE...\n"); //DEBUG    
+#ifdef WIN32
+	ecran = SDL_SetVideoMode(850, 480, 0, SDL_HWSURFACE);    
+#else
+	ecran = SDL_SetVideoMode(0, 0, 16, SDL_HWSURFACE | SDL_FULLSCREEN);    
+#endif
+        printf("SET MODE done...\n"); //DEBUG
 
-	ecran = SDL_SetVideoMode(0, 0, 16, SDL_HWSURFACE | SDL_FULLSCREEN);
 	SDL_ShowCursor(0);
 	echelle = ecran->h;
 
@@ -140,6 +151,7 @@ int main(int argc, char **argv)
 	ticks = SDL_GetTicks();
 	wticks = SDL_GetTicks() + 20;
 
+        printf("GAME LOOP...\n"); //DEBUG
 	while(1)
 	{
 
@@ -250,7 +262,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		while(SDL_PollEvent(&ev))
+                while(SDL_PollEvent(&ev))
 		{
 			switch(ev.type)
 			{
@@ -271,10 +283,14 @@ int main(int argc, char **argv)
 						if(mode == 2) switch(ev.key.keysym.sym)
 						{
 							case SDLK_q: SDL_Quit(); exit(0); break;
-							case SDLK_r:  mode = -1;
+                                                case SDLK_r:  mode = -1;
+                                                    default: ;
 						}
+                            break;
 
-				case SDL_QUIT: SDL_Quit(); exit(0);
+                        case SDL_QUIT: SDL_Quit(); exit(0);
+                        default:
+                            ;
 			}
 		}
 
