@@ -1,7 +1,7 @@
 SDLCave for Harmattan
 =====================
 
- .. image:: http://tube42.github.io/meego_sdlcave/img/img00.png
+ .. image:: doc/img00.png
 
 
 **This is a quick and dirty port of SDLCave for Harmattan.**
